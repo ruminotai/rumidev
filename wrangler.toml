@@ -1,0 +1,6 @@
+name = "rumidev"
+compatibility_date = "2026-03-17"
+
+[[kv_namespaces]]
+binding = "PROFILES"
+id = "556bb0725c0342dfafc1c6b7e8c791b9"

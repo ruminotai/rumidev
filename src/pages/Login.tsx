@@ -103,19 +103,44 @@ export default function Login() {
   ];
 
   useEffect(() => {
-    supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_IN' && session) {
-        setStep(2);
+    const params = new URLSearchParams(window.location.search);
+    const redirect = params.get('redirect');
+
+    const handleSession = (session: { user: unknown } | null) => {
+      if (!session) return;
+      if (redirect) {
+        const stored = localStorage.getItem('rumi_profile');
+        if (stored) {
+          try {
+            if (JSON.parse(stored).username) {
+              window.location.href = redirect;
+              return;
+            }
+          } catch {}
+        }
       }
+      setStep(2);
+    };
+
+    supabase.auth.getSession().then(({ data: { session } }) => handleSession(session));
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN') handleSession(session);
     });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const handleOAuth = async (provider: 'github' | 'google') => {
+    const params = new URLSearchParams(window.location.search);
+    const redirect = params.get('redirect');
+    const redirectTo = redirect
+      ? `${window.location.origin}/login?redirect=${encodeURIComponent(redirect)}`
+      : `${window.location.origin}/login`;
+
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
-      options: {
-        redirectTo: window.location.origin + '/login',
-      },
+      options: { redirectTo },
     });
     if (error) {
       setLoginError(error.message);
@@ -125,11 +150,18 @@ export default function Login() {
   const handleMagicLink = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) return;
+
+    const params = new URLSearchParams(window.location.search);
+    const redirect = params.get('redirect');
+    const emailRedirectTo = redirect
+      ? `${window.location.origin}/login?redirect=${encodeURIComponent(redirect)}`
+      : `${window.location.origin}/login`;
+
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
         shouldCreateUser: true,
-        emailRedirectTo: window.location.origin + '/login',
+        emailRedirectTo,
       },
     });
     if (error) {
@@ -138,6 +170,41 @@ export default function Login() {
       setMagicLinkSent(true);
       setLoginError('');
     }
+  };
+
+  const handleProfileComplete = async () => {
+    const profile = {
+      username: name.trim(),
+      language,
+      icon: avatarImages[selectedAvatar],
+      occupation: occupation.trim() || null,
+    };
+    localStorage.setItem('rumi_profile', JSON.stringify(profile));
+
+    // KV にも保存（失敗しても進む）
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.access_token) {
+        await fetch('/api/profile', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify(profile),
+        });
+      }
+    } catch (e) {
+      console.error('Failed to save profile to KV:', e);
+    }
+
+    const params = new URLSearchParams(window.location.search);
+    const redirect = params.get('redirect');
+    if (redirect) {
+      window.location.href = redirect;
+      return;
+    }
+    setStep((s) => s + 1);
   };
 
   const nextStep = () => setStep((s) => s + 1);
@@ -453,7 +520,7 @@ export default function Login() {
                     <ArrowLeft size={16} className="text-neutral-400" />
                   </button>
                   <button
-                    onClick={nextStep}
+                    onClick={handleProfileComplete}
                     disabled={!name.trim()}
                     className="flex-1 bg-[#e0e0e0] text-[#0a0a0a] hover:bg-white disabled:bg-[#1e1e1e] disabled:text-neutral-600 font-medium rounded-xl py-2.5 transition-colors flex items-center justify-center gap-2 text-sm"
                   >
@@ -494,7 +561,9 @@ export default function Login() {
                     {name}{t('complete.description', language)}
                   </p>
                   <button
-                    onClick={() => alert('Chat screen (demo end)')}
+                    onClick={() => {
+                      window.close();
+                    }}
                     className="w-full bg-[#e0e0e0] text-[#0a0a0a] hover:bg-white font-medium rounded-xl py-3 transition-colors flex items-center justify-center gap-2 text-sm"
                   >
                     {t('button.startChat', language)}

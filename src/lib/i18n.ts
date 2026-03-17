@@ -2,7 +2,9 @@ export const SUPPORTED_LANGUAGES = [
   'en', 'ja', 'zh', 'ko', 'es', 'fr', 'de', 'pt', 'ru', 'ar',
 ] as const;
 
+
 export type Language = (typeof SUPPORTED_LANGUAGES)[number];
+
 
 const translations: Record<string, Record<Language, string>> = {
   // Step 1: Auth
@@ -79,6 +81,7 @@ const translations: Record<string, Record<Language, string>> = {
     ar: 'أو',
   },
 
+
   // Step 2: Language
   'lang.title': {
     en: 'Select Language',
@@ -104,6 +107,7 @@ const translations: Record<string, Record<Language, string>> = {
     ru: 'Выберите язык для бесед с ИИ и интерфейса.',
     ar: 'اختر اللغة لمحادثات الذكاء الاصطناعي والواجهة.',
   },
+
 
   // Step 3: Profile
   'profile.title': {
@@ -191,6 +195,7 @@ const translations: Record<string, Record<Language, string>> = {
     ar: 'أفضل عدم الإجابة',
   },
 
+
   // Step 4: Complete
   'complete.title': {
     en: 'Setup Complete!',
@@ -216,6 +221,7 @@ const translations: Record<string, Record<Language, string>> = {
     ru: ', всё готово. Давайте начнём новый разговор с ИИ.',
     ar: '، كل شيء جاهز. لنبدأ محادثة جديدة مع الذكاء الاصطناعي.',
   },
+
 
   // Buttons
   'button.next': {
@@ -266,7 +272,119 @@ const translations: Record<string, Record<Language, string>> = {
     ru: 'Начать чат',
     ar: 'بدء المحادثة',
   },
+
+
+  // OAuth Consent
+  'consent.loading': {
+    en: 'Loading...',
+    ja: '読み込み中...',
+    zh: '加载中...',
+    ko: '로딩 중...',
+    es: 'Cargando...',
+    fr: 'Chargement...',
+    de: 'Laden...',
+    pt: 'Carregando...',
+    ru: 'Загрузка...',
+    ar: 'جارٍ التحميل...',
+  },
+  'consent.redirecting': {
+    en: 'Redirecting...',
+    ja: 'リダイレクト中...',
+    zh: '正在跳转...',
+    ko: '리디렉션 중...',
+    es: 'Redirigiendo...',
+    fr: 'Redirection...',
+    de: 'Weiterleitung...',
+    pt: 'Redirecionando...',
+    ru: 'Перенаправление...',
+    ar: 'جارٍ إعادة التوجيه...',
+  },
+  'consent.title': {
+    en: 'Authorize Application',
+    ja: 'アプリケーションを承認',
+    zh: '授权应用',
+    ko: '애플리케이션 승인',
+    es: 'Autorizar aplicación',
+    fr: "Autoriser l'application",
+    de: 'Anwendung autorisieren',
+    pt: 'Autorizar aplicativo',
+    ru: 'Авторизовать приложение',
+    ar: 'تفويض التطبيق',
+  },
+  'consent.wantsAccess': {
+    en: 'wants to access your account.',
+    ja: 'があなたのアカウントへのアクセスを求めています。',
+    zh: '想要访问您的帐户。',
+    ko: '이(가) 계정 액세스를 요청합니다.',
+    es: 'quiere acceder a tu cuenta.',
+    fr: 'souhaite accéder à votre compte.',
+    de: 'möchte auf Ihr Konto zugreifen.',
+    pt: 'quer acessar sua conta.',
+    ru: 'запрашивает доступ к вашей учётной записи.',
+    ar: 'يريد الوصول إلى حسابك.',
+  },
+  'consent.permissions': {
+    en: 'Permissions requested',
+    ja: 'リクエストされた権限',
+    zh: '请求的权限',
+    ko: '요청된 권한',
+    es: 'Permisos solicitados',
+    fr: 'Autorisations demandées',
+    de: 'Angeforderte Berechtigungen',
+    pt: 'Permissões solicitadas',
+    ru: 'Запрошенные разрешения',
+    ar: 'الأذونات المطلوبة',
+  },
+  'consent.approve': {
+    en: 'Approve',
+    ja: '承認する',
+    zh: '批准',
+    ko: '승인',
+    es: 'Aprobar',
+    fr: 'Approuver',
+    de: 'Genehmigen',
+    pt: 'Aprovar',
+    ru: 'Одобрить',
+    ar: 'الموافقة',
+  },
+  'consent.deny': {
+    en: 'Deny',
+    ja: '拒否する',
+    zh: '拒绝',
+    ko: '거부',
+    es: 'Denegar',
+    fr: 'Refuser',
+    de: 'Ablehnen',
+    pt: 'Negar',
+    ru: 'Отклонить',
+    ar: 'الرفض',
+  },
+  'consent.errorTitle': {
+    en: 'Authorization Error',
+    ja: '認可エラー',
+    zh: '授权错误',
+    ko: '인증 오류',
+    es: 'Error de autorización',
+    fr: "Erreur d'autorisation",
+    de: 'Autorisierungsfehler',
+    pt: 'Erro de autorização',
+    ru: 'Ошибка авторизации',
+    ar: 'خطأ في التفويض',
+  },
+  'consent.errorDesc': {
+    en: 'Something went wrong with the authorization request.',
+    ja: '認可リクエストでエラーが発生しました。',
+    zh: '授权请求出现错误。',
+    ko: '인증 요청에 문제가 발생했습니다.',
+    es: 'Algo salió mal con la solicitud de autorización.',
+    fr: "Une erreur s'est produite lors de la demande d'autorisation.",
+    de: 'Bei der Autorisierungsanfrage ist ein Fehler aufgetreten.',
+    pt: 'Algo deu errado com a solicitação de autorização.',
+    ru: 'Произошла ошибка при запросе авторизации.',
+    ar: 'حدث خطأ في طلب التفويض.',
+  },
 };
+
 
 export function t(key: string, lang: Language): string {
   return translations[key]?.[lang] ?? translations[key]?.['en'] ?? key;
