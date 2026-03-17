@@ -108,17 +108,23 @@ export default function Login() {
 
     const handleSession = (session: { user: unknown } | null) => {
       if (!session) return;
-      if (redirect) {
-        const stored = localStorage.getItem('rumi_profile');
-        if (stored) {
-          try {
-            if (JSON.parse(stored).username) {
-              window.location.href = redirect;
-              return;
-            }
-          } catch {}
-        }
+
+      const stored = localStorage.getItem('rumi_profile');
+      let hasProfile = false;
+      if (stored) {
+        try {
+          hasProfile = !!JSON.parse(stored).username;
+        } catch {}
       }
+
+      if (redirect && hasProfile) {
+        window.location.href = redirect;
+        return;
+      } else if (!redirect && hasProfile) {
+        window.location.href = '/home';
+        return;
+      }
+
       setStep(2);
     };
 
