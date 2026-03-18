@@ -1,12 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { t, type Language } from '../lib/i18n';
-import {
-  type Profile,
-  getLocalProfile,
-  fetchAndCacheProfile,
-  setLocalProfile,
-} from '../lib/profile';
+import { getLocalProfile, fetchAndCacheProfile, setLocalProfile } from '../lib/profile';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Mail,
@@ -112,28 +107,31 @@ export default function Login() {
     const params = new URLSearchParams(window.location.search);
     const redirect = params.get('redirect');
 
-    const handleSession = async (session: { user: { id: string }; access_token: string } | null) => {
+    const handleSession = async (session: { user: unknown; access_token: string } | null) => {
+      console.log('[login] handleSession called, session:', !!session);
       if (!session) return;
 
-      const userId = session.user.id;
+      let hasProfile = !!getLocalProfile();
+      console.log('[login] localStorage profile:', hasProfile);
 
-      // localStorage を確認（user_id 一致のみ）
-      let hasProfile = !!getLocalProfile(userId);
-
-      // localStorage になければ KV から取得
       if (!hasProfile) {
-        const kvProfile = await fetchAndCacheProfile(session.access_token, userId);
+        console.log('[login] trying KV fetch...');
+        const kvProfile = await fetchAndCacheProfile(session.access_token);
         hasProfile = !!kvProfile;
+        console.log('[login] KV result:', hasProfile);
       }
 
       if (hasProfile && redirect) {
+        console.log('[login] redirecting to:', redirect);
         window.location.href = redirect;
         return;
       } else if (hasProfile) {
+        console.log('[login] redirecting to /home');
         window.location.href = '/home';
         return;
       }
 
+      console.log('[login] no profile found, going to step 2');
       setStep(2);
     };
 
@@ -188,12 +186,7 @@ export default function Login() {
   };
 
   const handleProfileComplete = async () => {
-    // セッションから user_id を取得
-    const { data: { session } } = await supabase.auth.getSession();
-    const userId = session?.user?.id ?? '';
-
-    const profile: Profile = {
-      user_id: userId,
+    const profile = {
       username: name.trim(),
       language,
       icon: avatarImages[selectedAvatar],
@@ -203,6 +196,7 @@ export default function Login() {
 
     // KV にも保存（失敗しても進む）
     try {
+      const { data: { session } } = await supabase.auth.getSession();
       if (session?.access_token) {
         await fetch('/api/profile', {
           method: 'POST',

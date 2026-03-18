@@ -1,7 +1,6 @@
 import type { Language } from './i18n';
 
 export interface Profile {
-  user_id: string;
   username: string;
   language: Language;
   icon: string;
@@ -12,19 +11,16 @@ const STORAGE_KEY = 'rumi_profile';
 
 /**
  * localStorage からプロフィールを取得。
- * userId が指定された場合、user_id が一致しなければ null を返す。
+ * username が存在しなければ null を返す。
  */
-export function getLocalProfile(userId?: string): Profile | null {
+export function getLocalProfile(): Profile | null {
   const stored = localStorage.getItem(STORAGE_KEY);
   if (!stored) return null;
   try {
     const parsed = JSON.parse(stored) as Profile;
-    if (!parsed.username) return null;
-    if (userId && parsed.user_id !== userId) return null;
-    return parsed;
-  } catch {
-    return null;
-  }
+    if (parsed.username) return parsed;
+  } catch {}
+  return null;
 }
 
 /**
@@ -43,32 +39,29 @@ export function clearLocalProfile(): void {
 
 /**
  * KV からプロフィールを取得し、成功すれば localStorage にキャッシュして返す。
- * userId を付与して保存する（KV のレスポンスには user_id が含まれないため）。
+ * 失敗・404・不正データなら null を返す。
  */
-export async function fetchAndCacheProfile(
-  accessToken: string,
-  userId: string
-): Promise<Profile | null> {
+export async function fetchAndCacheProfile(accessToken: string): Promise<Profile | null> {
   try {
+    console.log('[profile] fetching from KV...');
     const res = await fetch('/api/profile', {
       headers: { 'Authorization': `Bearer ${accessToken}` },
     });
-    if (!res.ok) return null;
+    console.log('[profile] KV response status:', res.status);
+    if (!res.ok) {
+      const errBody = await res.text();
+      console.log('[profile] KV error body:', errBody);
+      return null;
+    }
 
-    const data = await res.json();
+    const data = await res.json() as Profile;
+    console.log('[profile] KV data:', data);
     if (!data.username) return null;
 
-    const profile: Profile = {
-      user_id: userId,
-      username: data.username,
-      language: data.language || 'en',
-      icon: data.icon || '/images/icon_login.webp',
-      occupation: data.occupation ?? null,
-    };
-
-    setLocalProfile(profile);
-    return profile;
-  } catch {
+    setLocalProfile(data);
+    return data;
+  } catch (e) {
+    console.error('[profile] KV fetch exception:', e);
     return null;
   }
 }
