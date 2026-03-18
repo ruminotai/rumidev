@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { supabase } from './lib/supabase.ts';
+import { getLocalProfile, fetchAndCacheProfile } from './lib/profile.ts';
 import Login from './pages/Login.tsx';
 import Home from './pages/Home.tsx';
 import OAuthConsent from './pages/OAuthConsent.tsx';
@@ -22,15 +23,21 @@ function RootRedirect() {
         return;
       }
 
-      const stored = localStorage.getItem('rumi_profile');
-      if (stored) {
-        try {
-          if (JSON.parse(stored).username) {
-            setTarget('/home');
-            setChecked(true);
-            return;
-          }
-        } catch {}
+      const userId = session.user.id;
+
+      // localStorage を確認（user_id 一致のみ）
+      if (getLocalProfile(userId)) {
+        setTarget('/home');
+        setChecked(true);
+        return;
+      }
+
+      // localStorage になければ KV から取得
+      const kvProfile = await fetchAndCacheProfile(session.access_token, userId);
+      if (kvProfile) {
+        setTarget('/home');
+        setChecked(true);
+        return;
       }
 
       setTarget('/login');

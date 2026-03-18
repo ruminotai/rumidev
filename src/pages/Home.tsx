@@ -2,6 +2,13 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { t, type Language, SUPPORTED_LANGUAGES } from '../lib/i18n';
+import {
+  type Profile,
+  getLocalProfile,
+  fetchAndCacheProfile,
+  setLocalProfile,
+  clearLocalProfile,
+} from '../lib/profile';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   LogOut,
@@ -34,16 +41,10 @@ const LANGUAGE_NAMES: Record<Language, string> = {
   ar: 'العربية',
 };
 
-interface Profile {
-  username: string;
-  language: Language;
-  icon: string;
-  occupation: string | null;
-}
-
 export default function Home() {
   const navigate = useNavigate();
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [userId, setUserId] = useState('');
   const [editing, setEditing] = useState(false);
   const [editName, setEditName] = useState('');
   const [editAvatar, setEditAvatar] = useState(0);
@@ -64,24 +65,23 @@ export default function Home() {
         return;
       }
 
-      const stored = localStorage.getItem('rumi_profile');
-      if (!stored) {
+      const uid = session.user.id;
+      setUserId(uid);
+
+      // localStorage を確認（user_id 一致のみ）
+      let prof = getLocalProfile(uid);
+
+      // localStorage になければ KV から取得
+      if (!prof) {
+        prof = await fetchAndCacheProfile(session.access_token, uid);
+      }
+
+      if (!prof) {
         navigate('/login', { replace: true });
         return;
       }
 
-      try {
-        const parsed = JSON.parse(stored) as Profile;
-        if (!parsed.username) {
-          navigate('/login', { replace: true });
-          return;
-        }
-        setProfile(parsed);
-      } catch {
-        navigate('/login', { replace: true });
-        return;
-      }
-
+      setProfile(prof);
       setLoading(false);
     };
 
@@ -118,13 +118,14 @@ export default function Home() {
     if (!editName.trim()) return;
 
     const updated: Profile = {
+      user_id: userId,
       username: editName.trim(),
       language: editLanguage,
       icon: AVATAR_IMAGES[editAvatar],
       occupation: editOccupation.trim() || null,
     };
 
-    localStorage.setItem('rumi_profile', JSON.stringify(updated));
+    setLocalProfile(updated);
     setProfile(updated);
     setEditing(false);
     setShowLangDropdown(false);
@@ -151,7 +152,7 @@ export default function Home() {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    localStorage.removeItem('rumi_profile');
+    clearLocalProfile();
     navigate('/login', { replace: true });
   };
 

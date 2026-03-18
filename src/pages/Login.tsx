@@ -1,6 +1,12 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { t, type Language } from '../lib/i18n';
+import {
+  type Profile,
+  getLocalProfile,
+  fetchAndCacheProfile,
+  setLocalProfile,
+} from '../lib/profile';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Mail,
@@ -106,21 +112,24 @@ export default function Login() {
     const params = new URLSearchParams(window.location.search);
     const redirect = params.get('redirect');
 
-    const handleSession = (session: { user: unknown } | null) => {
+    const handleSession = async (session: { user: { id: string }; access_token: string } | null) => {
       if (!session) return;
 
-      const stored = localStorage.getItem('rumi_profile');
-      let hasProfile = false;
-      if (stored) {
-        try {
-          hasProfile = !!JSON.parse(stored).username;
-        } catch {}
+      const userId = session.user.id;
+
+      // localStorage を確認（user_id 一致のみ）
+      let hasProfile = !!getLocalProfile(userId);
+
+      // localStorage になければ KV から取得
+      if (!hasProfile) {
+        const kvProfile = await fetchAndCacheProfile(session.access_token, userId);
+        hasProfile = !!kvProfile;
       }
 
-      if (redirect && hasProfile) {
+      if (hasProfile && redirect) {
         window.location.href = redirect;
         return;
-      } else if (!redirect && hasProfile) {
+      } else if (hasProfile) {
         window.location.href = '/home';
         return;
       }
@@ -179,17 +188,21 @@ export default function Login() {
   };
 
   const handleProfileComplete = async () => {
-    const profile = {
+    // セッションから user_id を取得
+    const { data: { session } } = await supabase.auth.getSession();
+    const userId = session?.user?.id ?? '';
+
+    const profile: Profile = {
+      user_id: userId,
       username: name.trim(),
       language,
       icon: avatarImages[selectedAvatar],
       occupation: occupation.trim() || null,
     };
-    localStorage.setItem('rumi_profile', JSON.stringify(profile));
+    setLocalProfile(profile);
 
     // KV にも保存（失敗しても進む）
     try {
-      const { data: { session } } = await supabase.auth.getSession();
       if (session?.access_token) {
         await fetch('/api/profile', {
           method: 'POST',
