@@ -105,7 +105,8 @@ export default function Login() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const redirect = params.get('redirect');
+    const rawRedirect = params.get('redirect');
+    const redirect = rawRedirect && rawRedirect.startsWith('/') && !rawRedirect.startsWith('//') ? rawRedirect : null;
 
     const handleSession = async (session: { user: { id: string }; access_token: string } | null) => {
       if (!session) return;
@@ -140,7 +141,8 @@ export default function Login() {
 
   const handleOAuth = async (provider: 'github' | 'google') => {
     const params = new URLSearchParams(window.location.search);
-    const redirect = params.get('redirect');
+    const rawRedirect = params.get('redirect');
+    const redirect = rawRedirect && rawRedirect.startsWith('/') && !rawRedirect.startsWith('//') ? rawRedirect : null;
     const redirectTo = redirect
       ? `${window.location.origin}/login?redirect=${encodeURIComponent(redirect)}`
       : `${window.location.origin}/login`;
@@ -159,7 +161,8 @@ export default function Login() {
     if (!email) return;
 
     const params = new URLSearchParams(window.location.search);
-    const redirect = params.get('redirect');
+    const rawRedirect = params.get('redirect');
+    const redirect = rawRedirect && rawRedirect.startsWith('/') && !rawRedirect.startsWith('//') ? rawRedirect : null;
     const emailRedirectTo = redirect
       ? `${window.location.origin}/login?redirect=${encodeURIComponent(redirect)}`
       : `${window.location.origin}/login`;
@@ -207,7 +210,8 @@ export default function Login() {
     }
 
     const params = new URLSearchParams(window.location.search);
-    const redirect = params.get('redirect');
+    const rawRedirect = params.get('redirect');
+    const redirect = rawRedirect && rawRedirect.startsWith('/') && !rawRedirect.startsWith('//') ? rawRedirect : null;
     if (redirect) {
       window.location.href = redirect;
       return;
