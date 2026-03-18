@@ -44,7 +44,6 @@ const LANGUAGE_NAMES: Record<Language, string> = {
 export default function Home() {
   const navigate = useNavigate();
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [userId, setUserId] = useState('');
   const [editing, setEditing] = useState(false);
   const [editName, setEditName] = useState('');
   const [editAvatar, setEditAvatar] = useState(0);
@@ -65,15 +64,14 @@ export default function Home() {
         return;
       }
 
-      const uid = session.user.id;
-      setUserId(uid);
+      const userId = session.user?.id;
 
-      // localStorage を確認（user_id 一致のみ）
-      let prof = getLocalProfile(uid);
+      // localStorage を確認
+      let prof = getLocalProfile(userId);
 
       // localStorage になければ KV から取得
       if (!prof) {
-        prof = await fetchAndCacheProfile(session.access_token, uid);
+        prof = await fetchAndCacheProfile(session.access_token, userId);
       }
 
       if (!prof) {
@@ -118,11 +116,11 @@ export default function Home() {
     if (!editName.trim()) return;
 
     const updated: Profile = {
-      user_id: userId,
       username: editName.trim(),
       language: editLanguage,
       icon: AVATAR_IMAGES[editAvatar],
       occupation: editOccupation.trim() || null,
+      user_id: profile?.user_id,
     };
 
     setLocalProfile(updated);

@@ -107,31 +107,25 @@ export default function Login() {
     const params = new URLSearchParams(window.location.search);
     const redirect = params.get('redirect');
 
-    const handleSession = async (session: { user: unknown; access_token: string } | null) => {
-      console.log('[login] handleSession called, session:', !!session);
+    const handleSession = async (session: { user: { id: string }; access_token: string } | null) => {
       if (!session) return;
 
-      let hasProfile = !!getLocalProfile();
-      console.log('[login] localStorage profile:', hasProfile);
+      const userId = session.user.id;
+      let hasProfile = !!getLocalProfile(userId);
 
       if (!hasProfile) {
-        console.log('[login] trying KV fetch...');
-        const kvProfile = await fetchAndCacheProfile(session.access_token);
+        const kvProfile = await fetchAndCacheProfile(session.access_token, userId);
         hasProfile = !!kvProfile;
-        console.log('[login] KV result:', hasProfile);
       }
 
       if (hasProfile && redirect) {
-        console.log('[login] redirecting to:', redirect);
         window.location.href = redirect;
         return;
       } else if (hasProfile) {
-        console.log('[login] redirecting to /home');
         window.location.href = '/home';
         return;
       }
 
-      console.log('[login] no profile found, going to step 2');
       setStep(2);
     };
 
@@ -192,11 +186,12 @@ export default function Login() {
       icon: avatarImages[selectedAvatar],
       occupation: occupation.trim() || null,
     };
-    setLocalProfile(profile);
 
-    // KV にも保存（失敗しても進む）
+    const { data: { session } } = await supabase.auth.getSession();
+    const profileWithId = { ...profile, user_id: session?.user?.id };
+    setLocalProfile(profileWithId);
+
     try {
-      const { data: { session } } = await supabase.auth.getSession();
       if (session?.access_token) {
         await fetch('/api/profile', {
           method: 'POST',
