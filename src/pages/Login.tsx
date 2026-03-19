@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { t, type Language } from '../lib/i18n';
 import { getLocalProfile, fetchAndCacheProfile, setLocalProfile } from '../lib/profile';
+import { getSafeRedirect } from '../lib/redirect';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Mail,
@@ -104,9 +105,7 @@ export default function Login() {
   ];
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const rawRedirect = params.get('redirect');
-    const redirect = rawRedirect && rawRedirect.startsWith('/') && !rawRedirect.startsWith('//') ? rawRedirect : null;
+    const redirect = getSafeRedirect();
 
     const handleSession = async (session: { user: { id: string }; access_token: string } | null) => {
       if (!session) return;
@@ -140,9 +139,7 @@ export default function Login() {
   }, []);
 
   const handleOAuth = async (provider: 'github' | 'google') => {
-    const params = new URLSearchParams(window.location.search);
-    const rawRedirect = params.get('redirect');
-    const redirect = rawRedirect && rawRedirect.startsWith('/') && !rawRedirect.startsWith('//') ? rawRedirect : null;
+    const redirect = getSafeRedirect();
     const redirectTo = redirect
       ? `${window.location.origin}/login?redirect=${encodeURIComponent(redirect)}`
       : `${window.location.origin}/login`;
@@ -160,9 +157,7 @@ export default function Login() {
     e.preventDefault();
     if (!email) return;
 
-    const params = new URLSearchParams(window.location.search);
-    const rawRedirect = params.get('redirect');
-    const redirect = rawRedirect && rawRedirect.startsWith('/') && !rawRedirect.startsWith('//') ? rawRedirect : null;
+    const redirect = getSafeRedirect();
     const emailRedirectTo = redirect
       ? `${window.location.origin}/login?redirect=${encodeURIComponent(redirect)}`
       : `${window.location.origin}/login`;
@@ -191,7 +186,11 @@ export default function Login() {
     };
 
     const { data: { session } } = await supabase.auth.getSession();
-    const profileWithId = { ...profile, user_id: session?.user?.id };
+    if (!session) {
+      window.location.href = '/login';
+      return;
+    }
+    const profileWithId = { ...profile, user_id: session.user.id };
     setLocalProfile(profileWithId);
 
     try {
@@ -209,9 +208,7 @@ export default function Login() {
       console.error('Failed to save profile to KV:', e);
     }
 
-    const params = new URLSearchParams(window.location.search);
-    const rawRedirect = params.get('redirect');
-    const redirect = rawRedirect && rawRedirect.startsWith('/') && !rawRedirect.startsWith('//') ? rawRedirect : null;
+    const redirect = getSafeRedirect();
     if (redirect) {
       window.location.href = redirect;
       return;

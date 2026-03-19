@@ -9,3 +9,4 @@ deploy.sh
 rumi_slots_export*.json
 gallery.html
 metadata.json
+.wrangler/
