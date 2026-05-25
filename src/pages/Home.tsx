@@ -1,434 +1,194 @@
-import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { supabase } from '../lib/supabase';
-import { t, type Language, SUPPORTED_LANGUAGES } from '../lib/i18n';
+import { Link } from 'react-router-dom';
+import { motion } from 'motion/react';
 import {
-  type Profile,
-  getLocalProfile,
-  fetchAndCacheProfile,
-  setLocalProfile,
-  clearLocalProfile,
-} from '../lib/profile';
-import { motion, AnimatePresence } from 'motion/react';
-import {
-  LogOut,
-  Pencil,
-  Save,
-  X,
-  Check,
-  Camera,
-  ChevronDown,
+  Apple,
+  ArrowUpRight,
+  Download,
+  Github,
+  Laptop,
+  Monitor,
+  Terminal,
 } from 'lucide-react';
 
-const AVATAR_IMAGES = [
-  '/images/icon_login.webp',
-  '/images/icon_language.webp',
-  '/images/icon_complete.webp',
-  '/images/icon_profile.webp',
-  '/images/icon_signup.webp',
+const SOURCE_URL = 'https://github.com/harupipipipi/rumiai';
+
+const downloads = [
+  {
+    os: 'Windows',
+    detail: 'x64 setup build',
+    icon: Monitor,
+  },
+  {
+    os: 'macOS',
+    detail: 'Apple silicon and Intel builds',
+    icon: Apple,
+  },
+  {
+    os: 'Linux',
+    detail: 'AppImage and deb builds',
+    icon: Terminal,
+  },
 ];
 
-const LANGUAGE_NAMES: Record<Language, string> = {
-  en: 'English',
-  ja: '日本語',
-  zh: '中文',
-  ko: '한국어',
-  es: 'Español',
-  fr: 'Français',
-  de: 'Deutsch',
-  pt: 'Português',
-  ru: 'Русский',
-  ar: 'العربية',
-};
+const signals = [
+  'local-first desktop workspace',
+  'AI conversations and tools in one place',
+  'built from the rumiai desktop app',
+];
 
 export default function Home() {
-  const navigate = useNavigate();
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [editing, setEditing] = useState(false);
-  const [editName, setEditName] = useState('');
-  const [editAvatar, setEditAvatar] = useState(0);
-  const [editOccupation, setEditOccupation] = useState('');
-  const [editLanguage, setEditLanguage] = useState<Language>('en');
-  const [showLangDropdown, setShowLangDropdown] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const langDropdownRef = useRef<HTMLDivElement>(null);
-
-  const lang = profile?.language ?? 'en';
-
-  useEffect(() => {
-    const check = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        navigate('/login', { replace: true });
-        return;
-      }
-
-      const userId = session.user?.id;
-
-      // localStorage を確認
-      let prof = getLocalProfile(userId);
-
-      // localStorage になければ KV から取得
-      if (!prof) {
-        prof = await fetchAndCacheProfile(session.access_token, userId);
-      }
-
-      if (!prof) {
-        navigate('/login', { replace: true });
-        return;
-      }
-
-      setProfile(prof);
-      setLoading(false);
-    };
-
-    check();
-  }, [navigate]);
-
-  useEffect(() => {
-    if (!showLangDropdown) return;
-    const handleClick = (e: MouseEvent) => {
-      if (langDropdownRef.current && !langDropdownRef.current.contains(e.target as Node)) {
-        setShowLangDropdown(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClick);
-    return () => document.removeEventListener('mousedown', handleClick);
-  }, [showLangDropdown]);
-
-  const startEditing = () => {
-    if (!profile) return;
-    setEditName(profile.username);
-    setEditAvatar(AVATAR_IMAGES.indexOf(profile.icon) >= 0 ? AVATAR_IMAGES.indexOf(profile.icon) : 0);
-    setEditOccupation(profile.occupation ?? '');
-    setEditLanguage(profile.language);
-    setShowLangDropdown(false);
-    setEditing(true);
-  };
-
-  const cancelEditing = () => {
-    setEditing(false);
-    setShowLangDropdown(false);
-  };
-
-  const saveProfile = async () => {
-    if (!editName.trim()) return;
-
-    const updated: Profile = {
-      username: editName.trim(),
-      language: editLanguage,
-      icon: AVATAR_IMAGES[editAvatar],
-      occupation: editOccupation.trim() || null,
-      user_id: profile?.user_id,
-    };
-
-    setLocalProfile(updated);
-    setProfile(updated);
-    setEditing(false);
-    setShowLangDropdown(false);
-
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
-
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.access_token) {
-        await fetch('/api/profile', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify(updated),
-        });
-      }
-    } catch (e) {
-      console.error('Failed to save profile to KV:', e);
-    }
-  };
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    clearLocalProfile();
-    navigate('/login', { replace: true });
-  };
-
-  if (loading || !profile) {
-    return (
-      <div className="flex min-h-screen w-full bg-[#0a0a0a] items-center justify-center">
-        <div className="w-6 h-6 border-2 border-neutral-700 border-t-neutral-400 rounded-full animate-spin" />
-      </div>
-    );
-  }
-
   return (
-    <div className="flex min-h-screen w-full bg-[#0a0a0a] text-neutral-300 font-sans selection:bg-neutral-800">
-      {/* Left panel */}
-      <div className="hidden lg:flex lg:w-[52%] relative items-center justify-center bg-[#0a0a0a] overflow-hidden">
-        <div className="absolute -inset-4">
+    <main className="min-h-screen bg-[#0a0a0a] text-neutral-200 selection:bg-neutral-800">
+      <section className="relative min-h-screen overflow-hidden">
+        <div className="absolute inset-0">
           <img
             src="/images/left_complete.webp"
             alt=""
-            className="w-full h-full object-cover"
-            style={{ objectPosition: '30% center' }}
+            className="h-full w-full object-cover"
+            style={{ objectPosition: '32% center' }}
             draggable={false}
           />
-          <div
-            className="absolute inset-0 pointer-events-none"
-            style={{
-              background: `
-                linear-gradient(to right, transparent 0%, transparent 75%, #0a0a0a 100%),
-                linear-gradient(to bottom, #0a0a0a 0%, transparent 6%, transparent 92%, #0a0a0a 100%)
-              `,
-            }}
-          />
+          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(10,10,10,0.98)_0%,rgba(10,10,10,0.84)_38%,rgba(10,10,10,0.42)_72%,rgba(10,10,10,0.86)_100%)]" />
+          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(10,10,10,0.94)_0%,rgba(10,10,10,0.24)_36%,rgba(10,10,10,1)_100%)]" />
         </div>
-      </div>
 
-      {/* Right panel */}
-      <div className="w-full lg:w-[48%] flex items-center justify-center p-4 sm:p-8 relative overflow-y-auto custom-scrollbar bg-[#0a0a0a]">
-        <div className="w-full max-w-md relative z-10 py-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-            className="bg-[#111111] border border-[#1e1e1e] rounded-2xl p-8"
-          >
-            {/* Header */}
-            <div className="flex items-start justify-between mb-6">
-              <div className="flex items-center gap-4">
-                <div className="w-14 h-14 rounded-full bg-[#0e0e0e] overflow-hidden shrink-0">
-                  <img
-                    src={profile.icon}
-                    alt=""
-                    className="w-full h-full object-cover scale-[2.0]"
-                    draggable={false}
-                  />
-                </div>
+        <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-6xl flex-col px-5 py-6 sm:px-8 lg:px-10">
+          <header className="flex items-center justify-between gap-4">
+            <Link to="/home" className="flex items-center gap-3">
+              <img
+                src="/images/app_icon.webp"
+                alt=""
+                className="h-10 w-10 rounded-xl border border-white/10 bg-[#111111] object-cover"
+                draggable={false}
+              />
+              <span className="text-sm font-semibold tracking-normal text-white">rumiai</span>
+            </Link>
+
+            <div className="flex items-center gap-2">
+              <a
+                href={SOURCE_URL}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-white/10 bg-black/35 text-neutral-300 transition hover:border-white/20 hover:bg-white/10 hover:text-white"
+                aria-label="Open rumiai on GitHub"
+              >
+                <Github size={18} />
+              </a>
+              <Link
+                to="/login"
+                className="inline-flex h-10 items-center justify-center rounded-lg border border-white/10 bg-white text-sm font-medium text-[#0a0a0a] px-4 transition hover:bg-neutral-200"
+              >
+                Sign in
+              </Link>
+            </div>
+          </header>
+
+          <div className="grid flex-1 items-center gap-10 py-10 lg:grid-cols-[minmax(0,1.05fr)_minmax(320px,0.72fr)] lg:py-16">
+            <motion.div
+              initial={{ opacity: 0, y: 18 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+              className="max-w-3xl"
+            >
+              <div className="mb-5 inline-flex items-center gap-2 rounded-lg border border-white/10 bg-black/35 px-3 py-2 text-xs text-neutral-300">
+                <Laptop size={14} />
+                Desktop app builds from harupipipipi/rumiai
+              </div>
+              <h1 className="max-w-3xl text-5xl font-semibold leading-[1.02] tracking-normal text-white sm:text-6xl lg:text-7xl">
+                rumiai
+              </h1>
+              <p className="mt-5 max-w-2xl text-base leading-7 text-neutral-300 sm:text-lg">
+                A quiet desktop home for AI chat, tools, and local workflows.
+                Install builds for Windows, macOS, and Linux will live here as
+                the desktop app releases are promoted.
+              </p>
+
+              <div className="mt-8 grid gap-3 sm:grid-cols-3">
+                {signals.map((signal) => (
+                  <div
+                    key={signal}
+                    className="min-h-16 rounded-lg border border-white/10 bg-black/35 px-4 py-3 text-sm leading-5 text-neutral-300"
+                  >
+                    {signal}
+                  </div>
+                ))}
+              </div>
+
+              <a
+                href={SOURCE_URL}
+                className="mt-6 inline-flex max-w-full items-center gap-2 rounded-lg border border-white/10 bg-black/35 px-4 py-3 text-sm text-neutral-300 transition hover:border-white/20 hover:bg-white/10 hover:text-white"
+              >
+                <Github size={16} className="shrink-0" />
+                <span className="truncate">https://github.com/harupipipipi/rumiai</span>
+                <ArrowUpRight size={15} className="shrink-0" />
+              </a>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 18 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.45, delay: 0.08, ease: [0.22, 1, 0.36, 1] }}
+              className="rounded-xl border border-[#2a2a2a] bg-[#101010] p-4 shadow-2xl shadow-black/60"
+            >
+              <div className="flex items-start justify-between gap-4 border-b border-white/10 pb-4">
                 <div>
-                  <h1 className="text-xl font-bold text-white leading-tight">
-                    {t('home.greeting', lang)} {profile.username}
-                  </h1>
-                  <p className="text-sm text-neutral-500 mt-0.5">
-                    {t('home.subtitle', lang)}
+                  <h2 className="text-lg font-semibold text-white">Install rumiai</h2>
+                  <p className="mt-1 text-sm leading-5 text-neutral-400">
+                    Platform builds are staged through GitHub releases.
                   </p>
                 </div>
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white text-[#0a0a0a]">
+                  <Download size={18} />
+                </div>
               </div>
-            </div>
 
-            {/* Saved toast */}
-            <AnimatePresence>
-              {saved && (
-                <motion.div
-                  initial={{ opacity: 0, y: -8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -8 }}
-                  className="flex items-center gap-2 text-green-400 text-xs bg-green-500/10 p-3 rounded-lg border border-green-500/20 mb-4"
-                >
-                  <Check size={14} className="shrink-0" />
-                  <p>{t('home.saved', lang)}</p>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* Profile section */}
-            <div className="border border-[#1e1e1e] rounded-xl overflow-hidden">
-              <div className="flex items-center justify-between px-4 py-3 bg-[#0e0e0e] border-b border-[#1e1e1e]">
-                <span className="text-xs font-medium text-neutral-400">
-                  {t('home.profileSection', lang)}
-                </span>
-                {!editing ? (
+              <div className="mt-4 space-y-3">
+                {downloads.map(({ os, detail, icon: Icon }) => (
                   <button
-                    onClick={startEditing}
-                    className="flex items-center gap-1.5 text-xs text-neutral-500 hover:text-neutral-300 transition-colors"
+                    key={os}
+                    type="button"
+                    disabled
+                    className="flex min-h-20 w-full cursor-not-allowed items-center justify-between gap-4 rounded-lg border border-[#292929] bg-[#151515] px-4 py-3 text-left"
                   >
-                    <Pencil size={12} />
-                    {t('home.edit', lang)}
+                    <span className="flex min-w-0 items-center gap-3">
+                      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-black/30 text-neutral-200">
+                        <Icon size={20} />
+                      </span>
+                      <span className="min-w-0">
+                        <span className="block text-sm font-medium text-white">{os}</span>
+                        <span className="mt-0.5 block text-xs leading-5 text-neutral-500">
+                          {detail}
+                        </span>
+                      </span>
+                    </span>
+                    <span className="shrink-0 rounded-md border border-white/10 bg-black/40 px-2.5 py-1 text-xs font-medium text-neutral-300">
+                      Coming soon
+                    </span>
                   </button>
-                ) : (
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={cancelEditing}
-                      className="flex items-center gap-1 text-xs text-neutral-500 hover:text-neutral-300 transition-colors"
-                    >
-                      <X size={12} />
-                      {t('home.cancel', lang)}
-                    </button>
-                    <button
-                      onClick={saveProfile}
-                      disabled={!editName.trim()}
-                      className="flex items-center gap-1 text-xs text-neutral-300 hover:text-white disabled:text-neutral-600 transition-colors"
-                    >
-                      <Save size={12} />
-                      {t('home.save', lang)}
-                    </button>
-                  </div>
-                )}
+                ))}
               </div>
 
-              {!editing ? (
-                /* View mode */
-                <div className="divide-y divide-[#1e1e1e]">
-                  <div className="flex items-center gap-4 px-4 py-3">
-                    <div className="w-10 h-10 rounded-full bg-[#0e0e0e] overflow-hidden shrink-0">
-                      <img
-                        src={profile.icon}
-                        alt=""
-                        className="w-full h-full object-cover scale-[2.0]"
-                        draggable={false}
-                      />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-white">{profile.username}</p>
-                      <p className="text-xs text-neutral-500">
-                        {profile.occupation ?? t('home.notSet', lang)}
-                      </p>
-                    </div>
-                  </div>
+              <div className="mt-4 rounded-lg border border-white/10 bg-black/35 px-4 py-3 text-xs leading-5 text-neutral-400">
+                Installers are intentionally waiting for the large desktop PR to
+                merge. After the official builds are published, these buttons can
+                point directly to the release artifacts.
+              </div>
+            </motion.div>
+          </div>
 
-                  <div className="flex items-center justify-between px-4 py-3">
-                    <span className="text-xs text-neutral-500">{t('home.language', lang)}</span>
-                    <span className="text-sm text-neutral-300">{LANGUAGE_NAMES[profile.language]}</span>
-                  </div>
-
-                  <div className="flex items-center justify-between px-4 py-3">
-                    <span className="text-xs text-neutral-500">{t('home.occupation', lang)}</span>
-                    <span className="text-sm text-neutral-300">
-                      {profile.occupation ?? t('home.notSet', lang)}
-                    </span>
-                  </div>
-                </div>
-              ) : (
-                /* Edit mode */
-                <div className="p-4 space-y-4">
-                  {/* Avatar selection */}
-                  <div className="flex flex-col items-center gap-3">
-                    <div className="relative group cursor-pointer">
-                      <div className="w-16 h-16 rounded-full bg-[#0e0e0e] overflow-hidden">
-                        <img
-                          src={AVATAR_IMAGES[editAvatar]}
-                          alt=""
-                          className="w-full h-full object-cover scale-[2.0]"
-                          draggable={false}
-                        />
-                      </div>
-                      <div className="absolute inset-0 bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        <Camera size={16} className="text-white/80" />
-                      </div>
-                    </div>
-                    <div className="flex gap-2 justify-center">
-                      {AVATAR_IMAGES.map((src, idx) => (
-                        <button
-                          key={idx}
-                          onClick={() => setEditAvatar(idx)}
-                          className={`w-9 h-9 rounded-full overflow-hidden transition-all duration-200 ${
-                            editAvatar === idx
-                              ? 'ring-2 ring-neutral-400 ring-offset-2 ring-offset-[#111111] scale-105'
-                              : 'opacity-50 hover:opacity-80'
-                          }`}
-                        >
-                          <img
-                            src={src}
-                            alt=""
-                            className="w-full h-full object-cover scale-[2.0]"
-                            draggable={false}
-                          />
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Name */}
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-medium text-neutral-400 ml-1">
-                      {t('profile.nameLabel', lang)}
-                    </label>
-                    <input
-                      type="text"
-                      value={editName}
-                      onChange={(e) => setEditName(e.target.value)}
-                      className="w-full bg-[#181818] border border-[#252525] rounded-xl py-2.5 px-4 text-sm text-neutral-200 focus:outline-none focus:border-[#333] transition-all placeholder:text-neutral-600"
-                      placeholder={t('profile.namePlaceholder', lang)}
-                    />
-                  </div>
-
-                  {/* Occupation */}
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-medium text-neutral-400 ml-1">
-                      {t('profile.occupationLabel', lang)}
-                    </label>
-                    <input
-                      type="text"
-                      value={editOccupation}
-                      onChange={(e) => setEditOccupation(e.target.value)}
-                      className="w-full bg-[#181818] border border-[#252525] rounded-xl py-2.5 px-4 text-sm text-neutral-200 focus:outline-none focus:border-[#333] transition-all placeholder:text-neutral-600"
-                      placeholder={t('profile.occupationPlaceholder', lang)}
-                    />
-                  </div>
-
-                  {/* Language */}
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-medium text-neutral-400 ml-1">
-                      {t('home.language', lang)}
-                    </label>
-                    <div className="relative" ref={langDropdownRef}>
-                      <button
-                        type="button"
-                        onClick={() => setShowLangDropdown(!showLangDropdown)}
-                        className="w-full bg-[#181818] border border-[#252525] rounded-xl py-2.5 px-4 text-sm text-neutral-200 flex items-center justify-between hover:border-[#333] transition-all"
-                      >
-                        <span>{LANGUAGE_NAMES[editLanguage]}</span>
-                        <ChevronDown size={14} className={`text-neutral-500 transition-transform ${showLangDropdown ? 'rotate-180' : ''}`} />
-                      </button>
-
-                      <AnimatePresence>
-                        {showLangDropdown && (
-                          <motion.div
-                            initial={{ opacity: 0, y: -4 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -4 }}
-                            transition={{ duration: 0.15 }}
-                            className="absolute z-20 top-full mt-1 w-full bg-[#181818] border border-[#252525] rounded-xl overflow-hidden shadow-xl max-h-48 overflow-y-auto custom-scrollbar"
-                          >
-                            {SUPPORTED_LANGUAGES.map((lid) => (
-                              <button
-                                key={lid}
-                                onClick={() => {
-                                  setEditLanguage(lid);
-                                  setShowLangDropdown(false);
-                                }}
-                                className={`w-full text-left px-4 py-2.5 text-sm transition-colors ${
-                                  editLanguage === lid
-                                    ? 'text-white bg-[#222]'
-                                    : 'text-neutral-400 hover:text-neutral-200 hover:bg-[#1c1c1c]'
-                                }`}
-                              >
-                                {LANGUAGE_NAMES[lid]}
-                              </button>
-                            ))}
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Actions */}
-            <div className="mt-6 space-y-3">
-              <button
-                onClick={handleLogout}
-                className="w-full border border-[#252525] rounded-xl py-2.5 hover:bg-[#1a1a1a] transition-colors flex items-center justify-center gap-2 text-sm text-neutral-400 hover:text-neutral-200"
+          <div className="relative pb-2">
+            <div className="h-px w-full bg-white/10" />
+            <div className="flex flex-col gap-2 pt-4 text-xs text-neutral-600 sm:flex-row sm:items-center sm:justify-between">
+              <span>rumiai.dev/home</span>
+              <a
+                href={SOURCE_URL}
+                className="inline-flex items-center gap-1 text-neutral-500 transition hover:text-neutral-300"
               >
-                <LogOut size={16} />
-                {t('home.logout', lang)}
-              </button>
+                Source repository
+                <ArrowUpRight size={13} />
+              </a>
             </div>
-          </motion.div>
+          </div>
         </div>
-      </div>
-    </div>
+      </section>
+    </main>
   );
 }

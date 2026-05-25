@@ -116,12 +116,12 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   try {
     const userId = await getUserIdFromToken(request, env.VITE_SUPABASE_URL);
 
-    const body = await request.json<{
+    const body = await request.json() as {
       username?: string;
       language?: string;
       icon?: string | null;
       occupation?: string | null;
-    }>();
+    };
 
     if (!body.username?.trim()) {
       return jsonResponse({ error: 'username is required' }, 400, request);
