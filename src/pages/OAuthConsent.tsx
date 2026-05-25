@@ -100,7 +100,7 @@ export default function OAuthConsent() {
         return;
       }
 
-      window.location.href = (data as { redirect_to: string }).redirect_to;
+      window.location.href = (data as unknown as { redirect_to: string }).redirect_to;
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : 'Unknown error');
       setStatus('error');
@@ -122,7 +122,7 @@ export default function OAuthConsent() {
         return;
       }
 
-      window.location.href = (data as { redirect_to: string }).redirect_to;
+      window.location.href = (data as unknown as { redirect_to: string }).redirect_to;
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : 'Unknown error');
       setStatus('error');

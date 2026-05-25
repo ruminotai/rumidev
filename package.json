@@ -20,9 +20,10 @@
     "react-router-dom": "^7.13.1"
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "^4.20260525.1",
     "@tailwindcss/vite": "^4.1.14",
-    "@vitejs/plugin-react": "^5.0.4",
     "@types/node": "^22.14.0",
+    "@vitejs/plugin-react": "^5.0.4",
     "autoprefixer": "^10.4.21",
     "tailwindcss": "^4.1.14",
     "tsx": "^4.21.0",

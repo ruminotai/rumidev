@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import type { FormEvent } from 'react';
 import { supabase } from '../lib/supabase';
 import { t, type Language } from '../lib/i18n';
 import { getLocalProfile, fetchAndCacheProfile, setLocalProfile } from '../lib/profile';
@@ -122,7 +123,7 @@ export default function Login() {
         window.location.href = redirect;
         return;
       } else if (hasProfile) {
-        window.location.href = '/home';
+        window.location.href = '/profile';
         return;
       }
 
@@ -153,7 +154,7 @@ export default function Login() {
     }
   };
 
-  const handleMagicLink = async (e: React.FormEvent) => {
+  const handleMagicLink = async (e: FormEvent) => {
     e.preventDefault();
     if (!email) return;
 
