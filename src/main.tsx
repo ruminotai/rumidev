@@ -1,5 +1,4 @@
-import { StrictMode } from 'react';
-import { lazy, Suspense, useState, useEffect } from 'react';
+import { StrictMode, lazy, Suspense } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Home from './pages/Home.tsx';
@@ -17,55 +16,6 @@ function LoadingScreen() {
   );
 }
 
-function RootRedirect() {
-  const [checked, setChecked] = useState(false);
-  const [target, setTarget] = useState('/login');
-
-  useEffect(() => {
-    const check = async () => {
-      const [{ supabase }, { getLocalProfile, fetchAndCacheProfile }] = await Promise.all([
-        import('./lib/supabase.ts'),
-        import('./lib/profile.ts'),
-      ]);
-      const { data: { session } } = await supabase.auth.getSession();
-
-      if (!session) {
-        setTarget('/login');
-        setChecked(true);
-        return;
-      }
-
-      const userId = session.user.id;
-
-      // localStorage を確認（user_id 一致のみ）
-      if (getLocalProfile(userId)) {
-        setTarget('/profile');
-        setChecked(true);
-        return;
-      }
-
-      // localStorage になければ KV から取得
-      const kvProfile = await fetchAndCacheProfile(session.access_token, userId);
-      if (kvProfile) {
-        setTarget('/profile');
-        setChecked(true);
-        return;
-      }
-
-      setTarget('/login');
-      setChecked(true);
-    };
-
-    check();
-  }, []);
-
-  if (!checked) {
-    return <LoadingScreen />;
-  }
-
-  return <Navigate to={target} replace />;
-}
-
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <BrowserRouter>
@@ -75,8 +25,8 @@ createRoot(document.getElementById('root')!).render(
           <Route path="/home" element={<Home />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/oauth/consent" element={<OAuthConsent />} />
-          <Route path="/" element={<RootRedirect />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
+          <Route path="/" element={<Navigate to="/home" replace />} />
+          <Route path="*" element={<Navigate to="/home" replace />} />
         </Routes>
       </Suspense>
     </BrowserRouter>
