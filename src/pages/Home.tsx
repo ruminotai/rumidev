@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'motion/react';
 import {
@@ -8,9 +9,19 @@ import {
   Laptop,
   Monitor,
   Terminal,
+  UserRound,
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
 const SOURCE_URL = 'https://github.com/harupipipipi/rumiai';
+
+type AccountCta = {
+  label: string;
+  to: string;
+  icon: LucideIcon | null;
+};
+
+const DEFAULT_CTA: AccountCta = { label: 'Sign in', to: '/login', icon: null };
 
 const downloads = [
   {
@@ -37,6 +48,44 @@ const signals = [
 ];
 
 export default function Home() {
+  const [accountCta, setAccountCta] = useState(DEFAULT_CTA);
+
+  useEffect(() => {
+    let active = true;
+
+    const checkAccount = async () => {
+      try {
+        const [{ supabase }, { getLocalProfile, fetchAndCacheProfile }] = await Promise.all([
+          import('../lib/supabase'),
+          import('../lib/profile'),
+        ]);
+        const { data: { session } } = await supabase.auth.getSession();
+
+        if (!active || !session) return;
+
+        const userId = session.user.id;
+        const hasProfile = getLocalProfile(userId)
+          || await fetchAndCacheProfile(session.access_token, userId);
+
+        if (!active) return;
+        setAccountCta(
+          hasProfile
+            ? { label: 'Profile', to: '/profile', icon: UserRound }
+            : { label: 'Complete profile', to: '/login', icon: UserRound },
+        );
+      } catch {
+        if (active) setAccountCta(DEFAULT_CTA);
+      }
+    };
+
+    checkAccount();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const AccountIcon = accountCta.icon;
+
   return (
     <main className="min-h-screen bg-[#0a0a0a] text-neutral-200 selection:bg-neutral-800">
       <section className="relative min-h-screen overflow-hidden">
@@ -73,10 +122,11 @@ export default function Home() {
                 <Github size={18} />
               </a>
               <Link
-                to="/login"
+                to={accountCta.to}
                 className="inline-flex h-10 items-center justify-center rounded-lg border border-white/10 bg-white text-sm font-medium text-[#0a0a0a] px-4 transition hover:bg-neutral-200"
               >
-                Sign in
+                {AccountIcon && <AccountIcon size={16} className="mr-2" />}
+                {accountCta.label}
               </Link>
             </div>
           </header>

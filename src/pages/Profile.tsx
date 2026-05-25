@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { t, type Language, SUPPORTED_LANGUAGES } from '../lib/i18n';
 import {
@@ -18,6 +18,7 @@ import {
   Check,
   Camera,
   ChevronDown,
+  House,
 } from 'lucide-react';
 
 const AVATAR_IMAGES = [
@@ -215,6 +216,13 @@ export default function Profile() {
                   </p>
                 </div>
               </div>
+              <Link
+                to="/home"
+                className="inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-lg border border-[#252525] px-3 text-xs font-medium text-neutral-400 transition-colors hover:bg-[#1a1a1a] hover:text-neutral-200"
+              >
+                <House size={14} />
+                Home
+              </Link>
             </div>
 
             {/* Saved toast */}
